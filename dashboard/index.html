@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Mapa Antifraude — Dashboard de Análise de Chargebacks">
+    <title>Mapa Antifraude | Dashboard Chargebacks</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-spinner">
+            <div class="spinner-ring"></div>
+            <p>Carregando dados...</p>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="header-left">
+                <div class="logo">
+                    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+                        <rect width="36" height="36" rx="8" fill="url(#logo-grad)"/>
+                        <path d="M10 18L15 24L26 12" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                        <defs><linearGradient id="logo-grad" x1="0" y1="0" x2="36" y2="36">
+                            <stop stop-color="#6366F1"/><stop offset="1" stop-color="#EC4899"/>
+                        </linearGradient></defs>
+                    </svg>
+                </div>
+                <div>
+                    <h1>Mapa Antifraude</h1>
+                    <p class="subtitle" id="periodo-label">Carregando período...</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="header-filters" style="display: flex; gap: 12px; align-items: center; background: var(--glass-bg); padding: 8px 16px; border-radius: var(--radius-sm); border: 1px solid var(--glass-border);">
+                    <label style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 500;">Período:</label>
+                    <input type="month" id="filter-start" value="2025-01" class="date-filter">
+                    <span style="color: var(--text-muted);">ate</span>
+                    <input type="month" id="filter-end" value="2026-05" class="date-filter">
+                </div>
+                <div class="header-badge" id="gerado-em"></div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <!-- KPI Cards -->
+        <section class="kpi-section" id="kpi-section">
+            <div class="kpi-card kpi-danger" id="kpi-cb">
+                <div class="kpi-icon">⚠️</div>
+                <div class="kpi-value" id="kpi-cb-count">—</div>
+                <div class="kpi-label">Chargebacks</div>
+                <div class="kpi-sub" id="kpi-cb-valor">R$ —</div>
+            </div>
+            <div class="kpi-card kpi-warning" id="kpi-noc">
+                <div class="kpi-icon">🔔</div>
+                <div class="kpi-value" id="kpi-noc-count">—</div>
+                <div class="kpi-label">Notificações (NOC)</div>
+                <div class="kpi-sub" id="kpi-noc-valor">R$ —</div>
+            </div>
+            <div class="kpi-card kpi-info" id="kpi-taxa">
+                <div class="kpi-icon">📊</div>
+                <div class="kpi-value" id="kpi-taxa-value">—%</div>
+                <div class="kpi-label">NOC → Chargeback</div>
+                <div class="kpi-sub" id="kpi-taxa-detail">— de —</div>
+            </div>
+            <div class="kpi-card kpi-neutral" id="kpi-ticket">
+                <div class="kpi-icon">🎫</div>
+                <div class="kpi-value" id="kpi-ticket-value">R$ —</div>
+                <div class="kpi-label">Ticket Médio CB</div>
+                <div class="kpi-sub" id="kpi-ticket-noc">NOC: R$ —</div>
+            </div>
+            <div class="kpi-card kpi-success" id="kpi-sap">
+                <div class="kpi-icon">🔗</div>
+                <div class="kpi-value" id="kpi-sap-match">—%</div>
+                <div class="kpi-label">Match SAP</div>
+                <div class="kpi-sub" id="kpi-sap-detail">— registros</div>
+            </div>
+            <div class="kpi-card kpi-purple" id="kpi-cs">
+                <div class="kpi-icon">🛡️</div>
+                <div class="kpi-value" id="kpi-cs-match">—</div>
+                <div class="kpi-label">Match ClearSale</div>
+                <div class="kpi-sub" id="kpi-cs-detail">registros cruzados</div>
+            </div>
+        </section>
+
+        <!-- Charts Row 1: Evolução Mensal -->
+        <section class="chart-section">
+            <div class="chart-card chart-full">
+                <div class="chart-header">
+                    <h2>📈 Evolução Mensal</h2>
+                    <div class="chart-toggle">
+                        <button class="toggle-btn active" data-mode="count" onclick="toggleMonthlyChart('count')">Quantidade</button>
+                        <button class="toggle-btn" data-mode="total" onclick="toggleMonthlyChart('total')">Valor (R$)</button>
+                    </div>
+                </div>
+                <div class="chart-body">
+                    <canvas id="chart-monthly"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Charts Row 2: Motivo + Bandeira + Entrega -->
+        <section class="chart-section chart-grid-3">
+            <div class="chart-card">
+                <div class="chart-header"><h2>🎯 Motivo do Chargeback</h2></div>
+                <div class="chart-body"><canvas id="chart-reason"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header"><h2>💳 Bandeira</h2></div>
+                <div class="chart-body chart-body-sm"><canvas id="chart-bandeira"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header"><h2>🚚 Forma de Entrega</h2></div>
+                <div class="chart-body chart-body-sm"><canvas id="chart-entrega"></canvas></div>
+            </div>
+        </section>
+
+        <!-- Charts Row 3: UF + Cidade -->
+        <section class="chart-section chart-grid-2">
+            <div class="chart-card">
+                <div class="chart-header"><h2>📍 Por UF</h2></div>
+                <div class="chart-body"><canvas id="chart-uf"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header"><h2>🏙️ Top 20 Cidades</h2></div>
+                <div class="chart-body"><canvas id="chart-cidade"></canvas></div>
+            </div>
+        </section>
+
+        <!-- Charts Row 4: Loja + Produto + ClearSale Status -->
+        <section class="chart-section chart-grid-3">
+            <div class="chart-card">
+                <div class="chart-header"><h2>🏪 Por Loja</h2></div>
+                <div class="chart-body"><canvas id="chart-loja"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header"><h2>📦 Tipo de Produto (ClearSale)</h2></div>
+                <div class="chart-body"><canvas id="chart-produto"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header"><h2>🛡️ Status ClearSale</h2></div>
+                <div class="chart-body chart-body-sm"><canvas id="chart-cs-status"></canvas></div>
+            </div>
+        </section>
+
+        <!-- Charts Row 5: Categoria VTEX + Ferramenta + Virou CB -->
+        <section class="chart-section chart-grid-3">
+            <div class="chart-card">
+                <div class="chart-header"><h2>🏷️ Categorias (VTEX)</h2></div>
+                <div class="chart-body"><canvas id="chart-categorias"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header"><h2>🔧 Fonte de Dados</h2></div>
+                <div class="chart-body chart-body-sm"><canvas id="chart-fonte"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header"><h2>🔄 NOC → Chargeback</h2></div>
+                <div class="chart-body chart-body-sm"><canvas id="chart-virou"></canvas></div>
+            </div>
+        </section>
+
+        <!-- Cross Validation -->
+        <section class="chart-section">
+            <div class="chart-card chart-full">
+                <div class="chart-header"><h2>🔍 Cross-Validation entre Fontes</h2></div>
+                <div class="chart-body">
+                    <div class="cross-validation-grid" id="cross-validation"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Top Emails -->
+        <section class="chart-section">
+            <div class="chart-card chart-full">
+                <div class="chart-header"><h2>🚨 Top Emails Recorrentes</h2></div>
+                <div class="chart-body">
+                    <div class="table-container" id="top-emails-table"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Top Registros (maior valor) -->
+        <section class="chart-section">
+            <div class="chart-card chart-full">
+                <div class="chart-header"><h2>💰 Top 100 Chargebacks por Valor</h2></div>
+                <div class="chart-body">
+                    <div class="table-container table-scroll" id="top-registros-table"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>Mapa Antifraude — Farmácias São João | Gerado automaticamente</p>
+    </footer>
+
+    <script src="aggregator.js?v=3"></script>
+    <script src="app.js?v=4"></script>
+</body>
+</html>

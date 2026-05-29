@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Mapa Antifraude — Dashboard de Análise de Chargebacks">
+    <title>Mapa Antifraude | Dashboard Chargebacks</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Password Protection Overlay -->
+    <div id="login-overlay" class="login-overlay">
+        <div class="login-box">
+            <div class="logo">
+                <svg width="48" height="48" viewBox="0 0 36 36" fill="none">
+                    <rect width="36" height="36" rx="8" fill="url(#logo-grad-login)"/>
+                    <path d="M10 18L15 24L26 12" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    <defs><linearGradient id="logo-grad-login" x1="0" y1="0" x2="36" y2="36">
+                        <stop stop-color="#6366F1"/><stop offset="1" stop-color="#EC4899"/>
+                    </linearGradient></defs>
+                </svg>
+            </div>
+            <h2>Mapa Antifraude</h2>
+            <p>Digite a senha corporativa para acessar o dashboard.</p>
+            <form id="login-form">
+                <input type="password" id="login-password" placeholder="Senha de acesso" required autofocus>
+                <button type="submit" class="submit-btn">Acessar Painel</button>
+            </form>
+            <div id="login-error" class="login-error hidden">Senha incorreta. Tente novamente.</div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-spinner">
+            <div class="spinner-ring"></div>
+            <p>Carregando dados...</p>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="header-left">
+                <div class="logo">
+                    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+                        <rect width="36" height="36" rx="8" fill="url(#logo-grad)"/>
+                        <path d="M10 18L15 24L26 12" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                        <defs><linearGradient id="logo-grad" x1="0" y1="0" x2="36" y2="36">
+                            <stop stop-color="#6366F1"/><stop offset="1" stop-color="#EC4899"/>
+                        </linearGradient></defs>
+                    </svg>
+                </div>
+                <div>
+                    <h1>Mapa Antifraude</h1>
+                    <p class="subtitle" id="periodo-label">Carregando período...</p>
+                </div>
+            </div>
+            <div class="header-right" style="display: flex; gap: 12px; align-items: center;">
+                <div class="header-filters" style="display: flex; gap: 12px; align-items: center; background: var(--glass-bg); padding: 8px 16px; border-radius: var(--radius-sm); border: 1px solid var(--glass-border);">
+                    <label style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 500;">Período:</label>
+                    <input type="month" id="filter-start" value="2025-01" class="date-filter">
+                    <span style="color: var(--text-muted);">ate</span>
+                    <input type="month" id="filter-end" value="2026-05" class="date-filter">
+                </div>
+                <button id="help-btn" class="help-btn" aria-label="Ajuda e Documentação">?</button>
+                <div class="header-badge" id="gerado-em"></div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <!-- KPI Cards -->
+        <section class="kpi-section" id="kpi-section">
+            <div class="kpi-card kpi-danger" id="kpi-cb">
+                <div class="kpi-icon">⚠️</div>
+                <div class="kpi-value" id="kpi-cb-count">—</div>
+                <div class="kpi-label">Chargebacks</div>
+                <div class="kpi-sub" id="kpi-cb-valor">R$ —</div>
+            </div>
+            <div class="kpi-card kpi-warning" id="kpi-noc">
+                <div class="kpi-icon">🔔</div>
+                <div class="kpi-value" id="kpi-noc-count">—</div>
+                <div class="kpi-label">Notificações (NOC)</div>
+                <div class="kpi-sub" id="kpi-noc-valor">R$ —</div>
+            </div>
+            <div class="kpi-card kpi-info" id="kpi-taxa">
+                <div class="kpi-icon">📊</div>
+                <div class="kpi-value" id="kpi-taxa-value">—%</div>
+                <div class="kpi-label">NOC → Chargeback</div>
+                <div class="kpi-sub" id="kpi-taxa-detail">— de —</div>
+            </div>
+            <div class="kpi-card kpi-neutral" id="kpi-ticket">
+                <div class="kpi-icon">🎫</div>
+                <div class="kpi-value" id="kpi-ticket-value">R$ —</div>
+                <div class="kpi-label">Ticket Médio CB</div>
+                <div class="kpi-sub" id="kpi-ticket-noc">NOC: R$ —</div>
+            </div>
+            <div class="kpi-card kpi-success" id="kpi-sap">
+                <div class="kpi-icon">🔗</div>
+                <div class="kpi-value" id="kpi-sap-match">—%</div>
+                <div class="kpi-label">Match SAP</div>
+                <div class="kpi-sub" id="kpi-sap-detail">— registros</div>
+            </div>
+            <div class="kpi-card kpi-purple" id="kpi-cs">
+                <div class="kpi-icon">🛡️</div>
+                <div class="kpi-value" id="kpi-cs-match">—</div>
+                <div class="kpi-label">Match ClearSale</div>
+                <div class="kpi-sub" id="kpi-cs-detail">registros cruzados</div>
+            </div>
+        </section>
+
+        <!-- Charts Row 1: Evolução Mensal -->
+        <section class="chart-section">
+            <div class="chart-card chart-full">
+                <div class="chart-header">
+                    <h2>📈 Evolução Mensal</h2>
+                    <div class="chart-toggle">
+                        <button class="toggle-btn active" data-mode="count" onclick="toggleMonthlyChart('count')">Quantidade</button>
+                        <button class="toggle-btn" data-mode="total" onclick="toggleMonthlyChart('total')">Valor (R$)</button>
+                    </div>
+                </div>
+                <div class="chart-body">
+                    <div id="chart-monthly"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Charts Row 2: Motivo + Bandeira + Entrega -->
+        <section class="chart-section chart-grid-3">
+            <div class="chart-card">
+                <div class="chart-header"><h2>🎯 Motivo do Chargeback</h2></div>
+                <div class="chart-body"><div id="chart-reason"></div></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header"><h2>💳 Bandeira</h2></div>
+                <div class="chart-body chart-body-sm"><div id="chart-bandeira"></div></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header"><h2>🚚 Forma de Entrega</h2></div>
+                <div class="chart-body chart-body-sm"><div id="chart-entrega"></div></div>
+            </div>
+        </section>
+
+        <!-- Charts Row 3: UF + Cidade -->
+        <section class="chart-section chart-grid-2">
+            <div class="chart-card">
+                <div class="chart-header"><h2>📍 Por UF</h2></div>
+                <div class="chart-body"><div id="chart-uf"></div></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header"><h2>🏙️ Top 20 Cidades</h2></div>
+                <div class="chart-body"><div id="chart-cidade"></div></div>
+            </div>
+        </section>
+
+        <!-- Charts Row 4: Loja + Produto + ClearSale Status -->
+        <section class="chart-section chart-grid-3">
+            <div class="chart-card">
+                <div class="chart-header"><h2>🏪 Por Loja</h2></div>
+                <div class="chart-body"><div id="chart-loja"></div></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header"><h2>📦 Tipo de Produto (ClearSale)</h2></div>
+                <div class="chart-body"><div id="chart-produto"></div></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header"><h2>🛡️ Status ClearSale</h2></div>
+                <div class="chart-body chart-body-sm"><div id="chart-cs-status"></div></div>
+            </div>
+        </section>
+
+        <!-- Charts Row 5: Categoria VTEX + Ferramenta + Virou CB -->
+        <section class="chart-section chart-grid-3">
+            <div class="chart-card">
+                <div class="chart-header"><h2>🏷️ Categorias (VTEX)</h2></div>
+                <div class="chart-body"><div id="chart-categorias"></div></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header"><h2>🔧 Fonte de Dados</h2></div>
+                <div class="chart-body chart-body-sm"><div id="chart-fonte"></div></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header"><h2>🔄 NOC → Chargeback</h2></div>
+                <div class="chart-body chart-body-sm"><div id="chart-virou"></div></div>
+            </div>
+        </section>
+
+        <!-- Cross Validation -->
+        <section class="chart-section">
+            <div class="chart-card chart-full">
+                <div class="chart-header"><h2>🔍 Cross-Validation entre Fontes</h2></div>
+                <div class="chart-body">
+                    <div class="cross-validation-grid" id="cross-validation"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Top Emails -->
+        <section class="chart-section">
+            <div class="chart-card chart-full">
+                <div class="chart-header"><h2>🚨 Top Emails Recorrentes</h2></div>
+                <div class="chart-body">
+                    <div class="table-container" id="top-emails-table"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Top Registros (maior valor) -->
+        <section class="chart-section">
+            <div class="chart-card chart-full">
+                <div class="chart-header"><h2>💰 Top 100 Chargebacks por Valor</h2></div>
+                <div class="chart-body">
+                    <div class="table-container table-scroll" id="top-registros-table"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>Mapa Antifraude — Farmácias São João | Gerado automaticamente</p>
+    </footer>
+
+    <!-- Help Modal -->
+    <div id="help-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📖 Como Funciona o Processamento dos Dados?</h2>
+                <button id="close-modal-btn" class="close-modal-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <h3>🎯 Objetivo do Dashboard</h3>
+                <p>Unificar, conciliar e analisar dados de chargebacks de 3 fontes distintas (**Adyen, SAP e ClearSale**), enriquecidos com dados logísticos da **API da VTEX**, permitindo auditorias e visualização rápida de perdas operacionais.</p>
+
+                <h3>⚙️ O Fluxo de Dados (Robô Python)</h3>
+                <div class="modal-steps">
+                    <div class="modal-step">
+                        <span class="step-num">1</span>
+                        <div>
+                            <h4>Leitura e Filtro</h4>
+                            <p>O robô abre os arquivos mensais da **Adyen**, registros contábeis do **SAP** e fraudes da **ClearSale**, filtrando transações confirmadas (Chargebacks) e alertas prévios (NOCs).</p>
+                        </div>
+                    </div>
+                    <div class="modal-step">
+                        <span class="step-num">2</span>
+                        <div>
+                            <h4>Cruzamento e Conciliação</h4>
+                            <p><strong>Adyen ↔ SAP:</strong> Conciliação contábil via <em>PSP Reference</em> para garantir que a perda foi lançada financeiramente no ERP (Match atual de ~96%).</p>
+                            <p><strong>Adyen ↔ ClearSale:</strong> Cruzamento via ID de Pedido VTEX para extrair scores de fraude e itens afetados.</p>
+                        </div>
+                    </div>
+                    <div class="modal-step">
+                        <span class="step-num">3</span>
+                        <div>
+                            <h4>Alerta NOC → Chargeback</h4>
+                            <p>Rastreia se uma Notificação de Chargeback (NOC - aviso prévio de contestação) se tornou de fato um prejuízo confirmado semanas depois (conversão histórica de ~89%).</p>
+                        </div>
+                    </div>
+                    <div class="modal-step">
+                        <span class="step-num">4</span>
+                        <div>
+                            <h4>Enriquecimento VTEX API</h4>
+                            <p>Busca na API da VTEX a forma de entrega (<strong>Clique e Retire</strong> ou <strong>Entrega em Casa</strong>), nome da **Loja/Filial** física e categorias dos produtos.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <h3>📂 Saídas Geradas</h3>
+                <p>Sempre que o pipeline roda, ele atualiza este painel e exporta a planilha de auditoria <strong>consolidado_chargeback.xlsx</strong> com 5 abas detalhadas (Consolidado, apenas CBs, apenas NOCs, NOCs que viraram CBs e Resumo mensal).</p>
+
+                <h3>💡 Como Auditar no Excel?</h3>
+                <p>Para conferir qualquer número deste painel, abra o Excel consolidado na aba <strong>"Chargebacks"</strong>, filtre pelo mês desejado, e verifique a contagem de linhas e somatório de valores no rodapé do Excel. Os números serão perfeitamente idênticos aos KPIs!</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="aggregator2.js"></script>
+    <script src="app2.js?v=apex"></script>
+</body>
+</html>

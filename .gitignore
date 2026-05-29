@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+env/
+venv/
+.env
+
+# Planilhas Contábeis e Arquivos Temporários
+*.xlsx
+*.xls
+~$*
+
+# Pasta de Dados Brutos (Sensível)
+data/
+
+# Imagens de Teste e Temporários
+*.png
+*.jpg
+*.jpeg
+*.gif
+test_chart.html
+test_err.html
+
+# IDEs
+.vscode/
+.idea/
