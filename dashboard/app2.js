@@ -19,6 +19,15 @@ let fonteChart = null;
 let virouChart = null;
 let currentMonthlyMode = 'count';
 
+// Desabilita animações globais do ApexCharts para evitar conflito com animações CSS do container
+window.Apex = {
+    chart: {
+        animations: {
+            enabled: false
+        }
+    }
+};
+
 // ── Cores Temáticas Premium ─────────────────────
 const COLORS = {
     indigo: '#6366F1',

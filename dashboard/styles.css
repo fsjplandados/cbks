@@ -574,8 +574,7 @@ body::before {
     }
 }
 
-.kpi-card,
-.chart-card {
+.kpi-card {
     animation: fadeInUp 0.5s ease forwards;
 }
 
